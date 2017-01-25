@@ -19,6 +19,11 @@ require 'lib/dllimport'
 
 # Biblioteca de funções gráficas (OpenGL)
 require 'lib/opengl'
+require 'lib/shaders'
+require 'lib/buffers'
 require 'lib/graphics'
 require 'lib/color'
 require 'lib/bitmap'
+
+# Funções dos controles
+require 'lib/input'

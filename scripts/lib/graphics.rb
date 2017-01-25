@@ -31,65 +31,42 @@ module Graphics
 			# Área de visão
 			glViewport 0, 0, width, height
 			
-			# Matriz de correção para que X/Y = 1
-			apply_matrix
-			
-			# Matriz de visão de modelo (identidade)
-			glMatrixMode GL_MODELVIEW
-			glLoadIdentity
-			
 			# Transparência
 			glEnable GL_BLEND
 			glBlendFunc GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
-		end
-		#----------------------------------------------------------------------
-		# Aplica uma matriz aos gráficos para corrigir a escala X/Y para 1
-		#----------------------------------------------------------------------
-		def apply_matrix
-			glMatrixMode GL_PROJECTION
 			
-			s = 1.0 / height * width
-			glLoadMatrixf [
-				1, 0, 0, 0,
-				0, s, 0, 0,
-				0, 0, 1, 0,
-				0, 0, 0, 1
-			].pack('f16').cptr
+			# Shaders
+			@@_clearProgram = ShaderProgram.new
+			@@_clearProgram.add_vertex_shader 'basic_2d'
+			@@_clearProgram.add_fragment_shader 'basic_rgba'
+			@@_clearProgram.link
+			
+			# Buffers
+			@@_screen_rect_buffer = VertexBuffer.new(2, 6, GL_STATIC_DRAW)
+			@@_screen_rect_buffer.data = [
+				-1,  1,
+				 1,  1,
+				 1, -1,
+				 
+				 1, -1,
+				-1,  1,
+				-1, -1,
+			]
 		end
-		private :apply_matrix
 		#----------------------------------------------------------------------
 		# Limpeza da tela
 		#----------------------------------------------------------------------
 		def clear
-			if background.alpha != 255
-				glMatrixMode GL_PROJECTION
-				glPushMatrix
-				glLoadIdentity
-			
-				glMatrixMode GL_MODELVIEW
-				glPushMatrix
-				glLoadIdentity
+			if background.alpha != 255				
+				@@_clearProgram.use
 				
-				glColor4f *background.to_4f
-				glBegin GL_QUADS
-					glVertex2i -1.0,  1.0
-					glVertex2i  1.0,  1.0
-					glVertex2i  1.0, -1.0
-					glVertex2i -1.0, -1.0
-				glEnd
+				glUniform4f @@_clearProgram[:color], *background.to_4f
 				
-				glPopMatrix
-				
-				glMatrixMode GL_PROJECTION
-				glPopMatrix
+				@@_screen_rect_buffer.draw
 			else
 				glClearColor *background.to_4f
 				glClear GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
 			end
-
-            # Limpa a matriz
-			#glMatrixMode GL_MODELVIEW
-            #glLoadIdentity
 		end
         #----------------------------------------------------------------------
         # Atualização da tela
@@ -97,7 +74,7 @@ module Graphics
         alias upd update
         def update
 			unless @@_set_up
-				raise "Graphics module not initialized. n" + 
+				raise "Graphics module not initialized. " + 
 					  "Call `Graphics.setup` before `Graphics.update`"
 			end
 		
@@ -188,6 +165,8 @@ module Graphics
 				window_ex_style
 			)
 			
+			left = window_rect[:left].unpack('L').first
+			top = window_rect[:top].unpack('L').first
 			right = window_rect[:right].unpack('L').first
 			bottom = window_rect[:bottom].unpack('L').first
 			
@@ -204,10 +183,6 @@ module Graphics
 			@@height = height
 			
 			glViewport 0, 0, width, height
-			
-			glMatrixMode GL_PROJECTION
-			glLoadIdentity
-			apply_matrix
 		end
 		#----------------------------------------------------------------------
 		# Obtém a largura da tela
