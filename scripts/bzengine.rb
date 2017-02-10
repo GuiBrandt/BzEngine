@@ -19,6 +19,7 @@ require 'lib/dllimport'
 
 # Biblioteca de física
 require 'lib/chipmunk'
+require 'lib/physics'
 
 # Biblioteca de funções gráficas (OpenGL)
 require 'lib/opengl'
